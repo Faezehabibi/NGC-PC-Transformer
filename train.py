@@ -37,7 +37,7 @@ def main():
             targets_flat = jax.nn.one_hot(targets.flatten(), vocab_size)
             yMu_inf, y_mu, _EFE = model.process(obs=inputs, lab=targets_flat, adapt_synapses=False)
             
-            y_pred = yMu_inf.reshape(-1, vocab_size)
+            y_pred = y_mu.reshape(-1, vocab_size)
             y_true = targets_flat
             
             total_nll += measure_CatNLL(y_pred, y_true) * y_true.shape[0]
