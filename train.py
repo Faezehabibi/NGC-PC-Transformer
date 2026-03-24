@@ -52,7 +52,7 @@ def main():
         train_EFE = 0.
         total_batches = 0
         
-        print(f"\n iter {i}:")
+        print(f"\nEpoch {i}:")
         
         for batch_idx, batch in enumerate(train_loader):
             inputs = batch[0][1]
@@ -78,7 +78,7 @@ def main():
         avg_train_EFE = train_EFE / total_batches if total_batches > 0 else 0
         
         dev_ce, dev_ppl = eval_model(model, valid_loader, vocab_size)
-        print(f"Iter {i} Summary: CE = {dev_ce:.4f}, PPL = {dev_ppl:.4f}, Avg EFE = {avg_train_EFE:.4f}")
+        print(f"Epoch {i} Summary: CE = {dev_ce:.4f}, PPL = {dev_ppl:.4f}, Avg EFE = {avg_train_EFE:.4f}")
         if  i == (epoch-1):
           model.save_to_disk(params_only=False) # save final state of model to disk
     total_time = time.time() - start_time
