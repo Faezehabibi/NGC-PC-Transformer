@@ -28,9 +28,9 @@ class Output:
         self.z_out = RateCell("z_out", n_units=n_embed, tau_m=tau_m, act_fx="identity", batch_size=batch_size * seq_len)
         
         self.W_out = HebbianSynapse(
-                    "W_out", shape=(n_embed, vocab_size), batch_size= batch_size * seq_len, eta=eta, weight_init=dist.uniform(amin=wlb, amax=wub),
-                    bias_init=dist.constant(value=0.), w_bound=0., optim_type=optim_type, sign_value= -1.0, key=subkeys[4],prior=("l1l2", (0.001, 0.001)))
+                    "W_out", shape=(n_embed, vocab_size), batch_size= batch_size * seq_len, eta=eta, weight_init=dist.gaussian(mean=0.0, std=0.005),
+                    bias_init=dist.constant(value=0.), w_bound=1., optim_type=optim_type, sign_value= -1.0, key=subkeys[4],prior=("constant", 0.))
         self.e_out = ErrorCell("e_out", n_units=vocab_size, 
                                   batch_size=batch_size * seq_len) # shape=(seq_len, vocab_size, 1),
         self.E_out = StaticSynapse(
-                    "E_out", shape=(vocab_size, n_embed), weight_init=dist.uniform(low=wlb, high=wub), key=subkeys[4])
+                    "E_out", shape=(vocab_size, n_embed), weight_init=dist.constant(value=0.0),  bias_init=None, key=subkeys[4])
