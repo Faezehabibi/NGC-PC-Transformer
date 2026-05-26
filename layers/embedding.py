@@ -1,5 +1,6 @@
 
-from ngclearn.components import GaussianErrorCell as ErrorCell, RateCell
+from utils.errorcell import GaussianErrorCell as ErrorCell
+from utils.ratecell import RateCell
 from ngclearn.utils.distribution_generator import DistributionGenerator as dist
 from config import Config as config
 from utils.embed_utils import EmbeddingSynapse

@@ -3,7 +3,7 @@ import jax
 from ngclearn import Context, MethodProcess
 from ngclearn.utils.io_utils import makedir
 from jax import numpy as jnp, random, jit
-from ngclearn.components import GaussianErrorCell as ErrorCell, RateCell, HebbianSynapse, StaticSynapse
+from ngclearn.components import HebbianSynapse, StaticSynapse
 from ngclearn.utils.distribution_generator import DistributionGenerator as dist
 from config import Config as config
 from layers.embedding import EMBEDDING
@@ -16,6 +16,8 @@ from layers.output import Output
 from utils.model_util import ReshapeComponent, Outgrad
 from projection.projection import Projection
 import numpy as np
+from utils.errorcell import GaussianErrorCell as ErrorCell
+from utils.ratecell import RateCell
 
 
 

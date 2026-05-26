@@ -1,8 +1,10 @@
 import jax
 from jax import numpy as jnp, random, jit
-from ngclearn.components import GaussianErrorCell as ErrorCell, RateCell, HebbianSynapse, StaticSynapse
+from ngclearn.components import HebbianSynapse, StaticSynapse
 from ngclearn.utils.distribution_generator import DistributionGenerator as dist
 from config import Config as config
+from utils.errorcell import GaussianErrorCell as ErrorCell
+from utils.ratecell import RateCell
 
 class MLP:
     """

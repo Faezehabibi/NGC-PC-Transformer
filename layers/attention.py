@@ -1,9 +1,11 @@
-from ngclearn.components import GaussianErrorCell as ErrorCell, RateCell, HebbianSynapse, StaticSynapse
+from ngclearn.components import HebbianSynapse, StaticSynapse
 from ngclearn.utils.distribution_generator import DistributionGenerator as dist
 from jax import numpy as jnp, random, jit
 import jax
 from config import Config as config
 from utils.attention_utils import AttentionBlock
+from utils.errorcell import GaussianErrorCell as ErrorCell
+from utils.ratecell import RateCell
 from utils.attn_ratecell import AttnRateCell
 
 
