@@ -30,6 +30,7 @@ def _dfz_internal_gaussian(z, j, j_td, tau_m, leak_gamma): ## raw dynamics
     dz_dt = (-z_leak * leak_gamma + (j + j_td)) * (1./tau_m)
     return dz_dt
 
+# @jit
 def _modulate(j, dfx_val):
     """
     Apply a signal modulator to j (typically of the form of a derivative/dampening function)
@@ -44,6 +45,7 @@ def _modulate(j, dfx_val):
     """
     return j * dfx_val
 
+# @partial(jit, static_argnames=["integType", "priorType"])
 def _run_cell(dt, j, j_td, z, tau_m, leak_gamma=0., integType=0, priorType=0):
     """
     Runs leaky rate-coded state dynamics one step in time.
@@ -85,6 +87,7 @@ def _run_cell(dt, j, j_td, z, tau_m, leak_gamma=0., integType=0, priorType=0):
     _, _z = _step_fn(0., z, _dfz_fn, dt, params)
     return _z
 
+# @jit
 def _run_cell_stateless(j):
     """
     A simplification of running a stateless set of dynamics over j (an identity
@@ -223,6 +226,7 @@ class AttnRateCell(JaxComponent): ## Rate-coded/real-valued cell
         j = (jv + jq + jk)
         z = self.z.get()
 
+        #if tau_m > 0.:
         if self.is_stateful:
             
             dfx_val = self.dfx(z)
