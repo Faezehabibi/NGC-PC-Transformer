@@ -3,7 +3,7 @@ import jax
 from ngclearn import Context, MethodProcess
 from ngclearn.utils.io_utils import makedir
 from jax import numpy as jnp, random, jit
-from ngclearn.components import HebbianSynapse, StaticSynapse
+from ngclearn.components import GaussianErrorCell as ErrorCell, RateCell, HebbianSynapse, StaticSynapse
 from ngclearn.utils.distribution_generator import DistributionGenerator as dist
 from config import Config as config
 from layers.embedding import EMBEDDING
@@ -16,8 +16,6 @@ from layers.output import Output
 from utils.model_util import ReshapeComponent, Outgrad
 from projection.projection import Projection
 import numpy as np
-from utils.errorcell import GaussianErrorCell as ErrorCell
-from utils.ratecell import RateCell
 
 
 
@@ -209,7 +207,8 @@ class NGCTransformer:
                 self.z_actfx.zF >> self.output.e_out.mu
                 self.z_target.z >> self.output.e_out.target
 
-                self.output.e_out.dtarget >> self.output.E_out.inputs
+                self.output.e_out.dmu >> self.Outgrad.dmu
+                self.Outgrad.dmu_ >> self.output.E_out.inputs
 
 
                 self.output.E_out.outputs >> self.output.z_out.j
@@ -221,7 +220,7 @@ class NGCTransformer:
 
 
                 self.output.z_out.zF >> self.output.W_out.pre
-                self.output.e_out.dtarget >> self.output.W_out.post
+                self.Outgrad.dmu_ >> self.output.W_out.post
 
                         
                         
@@ -503,8 +502,6 @@ class NGCTransformer:
             
             block_proj.reshape_3d_to_2d_proj1.outputs.set(self.circuit.get_components(f"{p_prefix}_reshape_3d_to_2d_proj1").outputs.get())
             block_proj.q_attn_block = self.circuit.get_components(f"{p_prefix}_q_attn_block")
-          
-
     def process(self, obs, lab, adapt_synapses=True):
         
         self.reset.run()
@@ -584,7 +581,7 @@ class NGCTransformer:
                 block = self.blocks[i]
                 block_errors += block.attention.e_attn.L.get() + block.mlp.e_mlp.L.get() + block.mlp.e_mlp1.L.get()
 
-        EFE = block_errors + L1
+        EFE = L4+  block_errors + L1
 
         if adapt_synapses == True:
                 self.embedding_evolve.run()
@@ -595,4 +592,6 @@ class NGCTransformer:
 
     def get_latents(self):
         return self.projection.q_out_Ratecell.z.get()
-  
+        
+
+    
