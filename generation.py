@@ -16,7 +16,6 @@ import textwrap
 def generate_text(
     model,
     tokenizer,
-    prompt: str,
     max_new_tokens: int = 100,
     seq_len: int = config.seq_len,
     temperature: float = 1.0,
@@ -28,23 +27,23 @@ def generate_text(
     Generate text using the model and provided tokenizer.
     Works with both custom BPE and tiktoken backends.
     """
-    # Encode prompt - returns jnp.ndarray for both backends
-    prompt_ids = tokenizer.encode(prompt)
-    
-    # Ensure batch dimension: (1, sequence_length)
-    if prompt_ids.ndim == 1:
-        prompt_tensor = prompt_ids[None, :]
-    else:
-        prompt_tensor = prompt_ids
-
-    current_tokens = prompt_tensor
-    current_key = key
-
     if pad_token_id is None:
         if isinstance(tokenizer, BPETokenizer) and tokenizer.tokenizer is not None:
             pad_token_id = tokenizer.tokenizer.token_to_id("<pad>")
+        elif hasattr(tokenizer, "_enc") and hasattr(tokenizer._enc, "eot_token"):
+            pad_token_id = tokenizer._enc.eot_token
         else:
             pad_token_id = 0
+
+    start_token_id = None
+    if isinstance(tokenizer, BPETokenizer) and tokenizer.tokenizer is not None:
+        start_token_id = tokenizer.tokenizer.token_to_id("<bos>")
+    if start_token_id is None:
+        start_token_id = pad_token_id
+
+    # Initialize sequence with start token ID
+    current_tokens = jnp.array([[start_token_id]], dtype=jnp.int32)
+    current_key = key
 
     for _ in range(max_new_tokens):
         # Truncate context to fit model's seq_len
@@ -145,74 +144,14 @@ if __name__ == "__main__":
                 "BPE tokenizer not trained or loaded!\n\n"
             )
 
-    prompt_1 = (
-        "First Citizen:\n"
-        "Before we proceed any further, hear me speak.\n\n"
-        "All:\n"
-        "Speak, speak.\n\n"
-        "First Citizen:\n"
-        "You are all resolved rather to die than to famish?\n\n"
-        "All:\n"
-        "Resolved. resolved.\n\n"
-        "First Citizen:\n"
-        "First, you know Caius Marcius is chief enemy to the people.\n\n"
-        "All:\n"
-        "We know't, we know't."
-    )
-
-    prompt_2 = (
-        "First Soldier:\n"
-        "Fool-hardiness; not I.\n\n"
-        "Second Soldier:\n"
-        "Nor I.\n\n"
-        "First Soldier:\n"
-        "See, they have shut him in.\n\n"
-        "All:\n"
-        "To the pot, I warrant him.\n\n"
-        "LARTIUS:\n"
-        "What is become of Marcius?\n\n"
-        "All:\n"
-        "Slain, sir, doubtless.\n\n"
-        "First Soldier:\n"
-        "Following the fliers at the very heels,\n"
-        "With them he enters; who, upon the sudden,\n"
-        "Clapp'd to their gates: he is himself alone,\n"
-        "To answer all the city.\n\n"
-        "LARTIUS:\n"
-        "O noble fellow!\n"
-        "Who sensibly outdares his senseless sword,\n"
-        "And, when it bows, stands up. Thou art left, Marcius:\n"
-        "A carbuncle entire, as big as thou art,\n"
-        "Were not so rich a jewel. Thou wast a soldier\n"
-        "Even to Cato's wish, not fierce and terrible\n"
-        "Only in strokes; but, with thy grim looks and\n"
-        "The thunder-like percussion of thy sounds,\n"
-        "Thou madst thine enemies shake, as if the world\n"
-        "Were feverous and did tremble.\n\n"
-        "First Soldier:\n"
-        "Look, sir.\n\n"
-        "LARTIUS:\n"
-        "O,'tis Marcius!\n"
-        "Let's fetch him off, or make remain alike.\n\n"
-        "First Roman:\n"
-        "This will I carry to Rome.\n\n"
-        "Second Roman:\n"
-        "And I this.\n\n"
-        "Third Roman:\n"
-        "A murrain on't! I took this for silver."
-    )
-
     rng = jax.random.PRNGKey(0)
     rng, key_1 = jax.random.split(rng)
     rng, key_2 = jax.random.split(rng)
 
-    print("\n**************** PROMPT 1 ****************")
-    print(prompt_1)
     print("\nFINAL GENERATED 1:\n")
     generated_1 = generate_text(
         model,
         tokenizer,
-        prompt_1,
         max_new_tokens=100,
         temperature=0.9,
         top_k=50,
@@ -220,13 +159,10 @@ if __name__ == "__main__":
     )
     print(generated_1)
 
-    print("\n**************** PROMPT 2 ****************")
-    print(prompt_2)
     print("\nFINAL GENERATED 2:\n")
     generated_2 = generate_text(
         model,
         tokenizer,
-        prompt_2,
         max_new_tokens=100,
         temperature=0.9,
         top_k=50,
