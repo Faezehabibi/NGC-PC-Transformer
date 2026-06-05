@@ -207,8 +207,7 @@ class NGCTransformer:
                 self.z_actfx.zF >> self.output.e_out.mu
                 self.z_target.z >> self.output.e_out.target
 
-                self.output.e_out.dmu >> self.Outgrad.dmu
-                self.Outgrad.dmu_ >> self.output.E_out.inputs
+                self.output.e_out.dtarget >> self.output.E_out.inputs
 
 
                 self.output.E_out.outputs >> self.output.z_out.j
@@ -220,7 +219,7 @@ class NGCTransformer:
 
 
                 self.output.z_out.zF >> self.output.W_out.pre
-                self.Outgrad.dmu_ >> self.output.W_out.post
+                self.output.e_out.dtarget >> self.output.W_out.post
 
                         
                         
@@ -581,7 +580,7 @@ class NGCTransformer:
                 block = self.blocks[i]
                 block_errors += block.attention.e_attn.L.get() + block.mlp.e_mlp.L.get() + block.mlp.e_mlp1.L.get()
 
-        EFE = L4+  block_errors + L1
+        EFE = block_errors + L1
 
         if adapt_synapses == True:
                 self.embedding_evolve.run()
