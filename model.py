@@ -567,16 +567,24 @@ class NGCTransformer:
         self.clamp_input(obs)
         self.clamp_target(lab)
 
-        advance_fn = self.advance.run.compiled
-        state = global_state_manager.state
-        kwargs = jnp.full((self.T,), 1.0, dtype=jnp.float32)
+        if getattr(config, "fused_advance", True):
+            print("Using fused advance...")
+            advance_fn = self.advance.run.compiled
+            state = global_state_manager.state
+            kwargs = jnp.full((self.T,), 1.0, dtype=jnp.float32)
 
-        def scan_fn(ctx, dt):
-            new_ctx, _ = advance_fn(ctx, [dt])
-            return new_ctx, None
+            def scan_fn(ctx, dt):
+                new_ctx, _ = advance_fn(ctx, [dt])
+                return new_ctx, None
 
-        final_state, _ = jax.lax.scan(scan_fn, state, kwargs)
-        global_state_manager.set_state(final_state)
+            final_state, _ = jax.lax.scan(scan_fn, state, kwargs)
+            global_state_manager.set_state(final_state)
+        else:
+            print("Using non-fused advance(normal for-loop)...")
+            for ts in range(0, self.T):
+                self.clamp_input(obs)
+                self.clamp_target(lab)
+                self.advance.run(t=ts, dt=1.)
 
         y_mu = self.z_actfx.zF.get() 
 
