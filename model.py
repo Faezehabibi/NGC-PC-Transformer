@@ -15,6 +15,7 @@ from layers.mlp import MLP
 from layers.output import Output
 from utils.model_util import ReshapeComponent, Outgrad
 from projection.projection import Projection
+from ngcsimlib._src.global_state.manager import global_state_manager
 import numpy as np
 from utils.errorcell import GaussianErrorCell as ErrorCell
 from utils.ratecell import RateCell
@@ -562,18 +563,21 @@ class NGCTransformer:
         
         ## get projected prediction (from the P-step)
         y_mu_inf = self.projection.q_target_Ratecell.zF.get()
-    
-        EFE = 0. 
-        y_mu = 0.
-        #if adapt_synapses:
-        for ts in range(0, self.T):
-        
-            self.clamp_input(obs)
-            self.clamp_target(lab)
-             
-            self.advance.run(t=ts,dt=1.)
-           
-        # y_mu = self.output.W_out.outputs.get() 
+
+        self.clamp_input(obs)
+        self.clamp_target(lab)
+
+        advance_fn = self.advance.run.compiled
+        state = global_state_manager.state
+        kwargs = jnp.full((self.T,), 1.0, dtype=jnp.float32)
+
+        def scan_fn(ctx, dt):
+            new_ctx, _ = advance_fn(ctx, [dt])
+            return new_ctx, None
+
+        final_state, _ = jax.lax.scan(scan_fn, state, kwargs)
+        global_state_manager.set_state(final_state)
+
         y_mu = self.z_actfx.zF.get() 
 
         L1 = self.embedding.e_embed.L.get()
