@@ -604,6 +604,25 @@ class NGCTransformer:
         ## skip E/M steps if just doing test-time inference
         return y_mu_inf, y_mu, EFE 
 
+    def count_parameters(self):
+        """Count total number of learnable parameters in the model."""
+        total = 0
+        # Embedding weights
+        total += self.embedding.W_embed.word_weights.get().size
+        if self.embedding.W_embed.pos_learnable:
+            total += self.embedding.W_embed.pos_weights.get().size
+        # Transformer blocks
+        for block in self.blocks:
+            for W in [block.attention.W_q, block.attention.W_k,
+                      block.attention.W_v, block.attention.W_attn_out,
+                      block.mlp.W_mlp1, block.mlp.W_mlp2]:
+                total += W.weights.get().size
+                total += W.biases.get().size
+        # Output layer
+        total += self.output.W_out.weights.get().size
+        total += self.output.W_out.biases.get().size
+        return total
+
     def get_latents(self):
         return self.projection.q_out_Ratecell.z.get()
   

@@ -32,6 +32,8 @@ def main():
                           T=T, dt=1., tau_m=tau_m , act_fx=act_fx, eta=eta, dropout_rate= dropout_rate, exp_dir="exp",
                   loadDir= None, pos_learnable= pos_learnable, optim_type=optim_type, wub = wub, wlb= wlb, model_name="ngc_transformer" )
 
+    print(f" {model.count_parameters()/1e6:.2f} M parameters")
+
     def train_model(data_loader):
         train_EFE = 0.
         total_nll, total_tokens = 0., 0
