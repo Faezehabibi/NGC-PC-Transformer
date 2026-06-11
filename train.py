@@ -72,7 +72,8 @@ def main():
         if i == (epoch-1):
           model.save_to_disk(params_only=False) # save final state of model to disk
     total_time = time.time() - start_time
-    print(f"\nTraining finished. Total time: {total_time:.2f}s ({total_time/60:.2f} min)")
+    print(f"\nTraining finished.")
+    print(f"Total training time: {total_time:.2f} seconds ({total_time/60:.2f} min)")
    
 if __name__ == "__main__":
     main()
