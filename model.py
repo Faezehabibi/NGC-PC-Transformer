@@ -396,10 +396,11 @@ class NGCTransformer:
                 self.project = project_process
                 self.embedding_evolve=embedding_evolve_process
 
-                
+        if getattr(config, "fused_advance", True):
+            print("\nUsing fused advance loop (jax.lax.scan)")
+        else:
+            print("\nUsing normal for-loop advance")
 
-
-    
     def clamp_input(self,x):
         self.embedding.z_embed.j.set(x)
         self.projection.q_embed_Ratecell.j.set(x) 
@@ -568,7 +569,6 @@ class NGCTransformer:
         self.clamp_target(lab)
 
         if getattr(config, "fused_advance", True):
-            print("Using fused advance...")
             advance_fn = self.advance.run.compiled
             state = global_state_manager.state
             kwargs = jnp.full((self.T,), 1.0, dtype=jnp.float32)
@@ -580,7 +580,6 @@ class NGCTransformer:
             final_state, _ = jax.lax.scan(scan_fn, state, kwargs)
             global_state_manager.set_state(final_state)
         else:
-            print("Using non-fused advance(normal for-loop)...")
             for ts in range(0, self.T):
                 self.clamp_input(obs)
                 self.clamp_target(lab)
