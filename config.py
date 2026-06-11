@@ -25,7 +25,7 @@ class Config:
     act_fx_o = "identity"
 
     # Tokenizer selection: "BPE" (custom/BPE loader) or "tiktoken"
-    tokenizer = "BPE"
+    tokenizer = "tiktoken"
     # When tokenizer == "tiktoken", tokenizer_name is used (e.g. "gpt2" or "cl100k_base")
     tokenizer_name = "gpt2"
 
