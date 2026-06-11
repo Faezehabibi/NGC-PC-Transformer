@@ -31,7 +31,7 @@ class Output:
         
         self.W_out = HebbianSynapse(
                     "W_out", shape=(n_embed, vocab_size), batch_size= batch_size * seq_len, eta=config.eta_o, weight_init=dist.gaussian(mean=0.0, std=0.02),
-                    bias_init=dist.constant(value=0.), w_bound=1., optim_type="adam", sign_value= 1.0, key=subkeys[4],prior=("constant", 0.))
+                    bias_init=dist.constant(value=0.), w_bound=1., optim_type="adam", sign_value= -1.0, key=subkeys[4],prior=("constant", 0.))
         self.e_out = ErrorCell("e_out", n_units=vocab_size, 
                                   batch_size=batch_size * seq_len) # shape=(seq_len, vocab_size, 1),
         self.E_out = StaticSynapse(

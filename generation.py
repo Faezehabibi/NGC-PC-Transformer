@@ -1,5 +1,30 @@
-from model import NGCTransformer
+import os
+import sys
+
+# MUST BE SET BEFORE ANY JAX/TENSORFLOW IMPORTS
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['XLA_FLAGS'] = '--xla_gpu_autotune_level=0 --xla_gpu_strict_conv_algorithm_picker=false --xla_cpu_use_thunk_runtime=false'
+os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
+os.environ['JAX_PLATFORM_NAME'] = 'gpu'
+os.environ['JAX_ENABLE_X64'] = 'False'
+
+# Redirect stderr to suppress XLA warnings
+import sys
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
+
+import warnings
+warnings.filterwarnings('ignore')
+
+# Now import JAX and other libraries
 import jax
+jax.config.update('jax_platform_name', 'gpu')
+jax.config.update('jax_log_compiles', False)
+
+# Restore stderr after JAX initialization
+sys.stderr = stderr
+
+from model import NGCTransformer
 import jax.numpy as jnp
 import numpy as np
 from config import Config as config

@@ -213,7 +213,7 @@ class NGCTransformer:
 
 
                 self.output.E_out.outputs >> self.output.z_out.j
-                self.blocks[n_layers - 1].mlp.e_mlp.dtarget >> self.output.z_out.j_td
+                self.blocks[self.n_layers - 1].mlp.e_mlp.dtarget >> self.output.z_out.j_td
 
 
                 self.embedding.e_embed.dmu >> self.reshape_2d_to_3d_embed.inputs
@@ -221,7 +221,7 @@ class NGCTransformer:
 
 
                 self.output.z_out.zF >> self.output.W_out.pre
-                self.output.e_out.dtarget >> self.output.W_out.post
+                self.output.e_out.dmu >> self.output.W_out.post
 
                         
                         
@@ -503,6 +503,8 @@ class NGCTransformer:
             
             block_proj.reshape_3d_to_2d_proj1.outputs.set(self.circuit.get_components(f"{p_prefix}_reshape_3d_to_2d_proj1").outputs.get())
             block_proj.q_attn_block = self.circuit.get_components(f"{p_prefix}_q_attn_block")
+          
+
     def process(self, obs, lab, adapt_synapses=True):
         
         self.reset.run()
@@ -519,9 +521,9 @@ class NGCTransformer:
             block_proj.Q_v.weights.set(block.attention.W_v.weights.get())
             block_proj.Q_v.biases.set(block.attention.W_v.biases.get())
             block_proj.Q_attn_out.weights.set(block.attention.W_attn_out.weights.get())
-            block_proj.q_attn_block.inputs_q.set(block.attention.attn_block.inputs_q.get())
-            block_proj.q_attn_block.inputs_k.set(block.attention.attn_block.inputs_k.get())
-            block_proj.q_attn_block.inputs_v.set(block.attention.attn_block.inputs_v.get())
+            # block_proj.q_attn_block.inputs_q.set(block.attention.attn_block.inputs_q.get())
+            # block_proj.q_attn_block.inputs_k.set(block.attention.attn_block.inputs_k.get())
+            # block_proj.q_attn_block.inputs_v.set(block.attention.attn_block.inputs_v.get())
             block_proj.Q_attn_out.biases.set(block.attention.W_attn_out.biases.get())
             block_proj.Q_mlp1.weights.set(block.mlp.W_mlp1.weights.get())
             block_proj.Q_mlp1.biases.set(block.mlp.W_mlp1.biases.get())
@@ -540,11 +542,11 @@ class NGCTransformer:
 
 
         for i in range(self.n_layers):
-            block_proj= self.projection.blocks[i]   
+        #     block_proj= self.projection.blocks[i]   
             b= self.blocks[i]
-            b.attention.z_qkv.z.set(block_proj.q_qkv_Ratecell.z.get())
-            b.mlp.z_mlp.z.set(block_proj.q_mlp_Ratecell.z.get())
-            b.mlp.z_mlp2.z.set(block_proj.q_mlp2_Ratecell.z.get())
+        #     b.attention.z_qkv.z.set(block_proj.q_qkv_Ratecell.z.get())
+        #     b.mlp.z_mlp.z.set(block_proj.q_mlp_Ratecell.z.get())
+        #     b.mlp.z_mlp2.z.set(block_proj.q_mlp2_Ratecell.z.get())
             b.attention.E_q.weights.set(jnp.transpose(b.attention.W_q.weights.get()))
             b.attention.E_k.weights.set(jnp.transpose(b.attention.W_k.weights.get()))
             b.attention.E_v.weights.set(jnp.transpose(b.attention.W_v.weights.get()))
@@ -553,13 +555,13 @@ class NGCTransformer:
             b.mlp.E_mlp1.weights.set(jnp.transpose(b.mlp.W_mlp1.weights.get()))
        
         self.output.E_out.weights.set(jnp.transpose(self.output.W_out.weights.get()))
-        self.output.z_out.z.set(self.projection.q_out_Ratecell.z.get())
-        self.output.e_out.dmu.set(self.projection.eq_target.dmu.get())
-        self.output.e_out.dtarget.set(self.projection.eq_target.dtarget.get())
+        # self.output.z_out.z.set(self.projection.q_out_Ratecell.z.get())
+        # self.output.e_out.dmu.set(self.projection.eq_target.dmu.get())
+        # self.output.e_out.dtarget.set(self.projection.eq_target.dtarget.get())
         
         
         ## get projected prediction (from the P-step)
-        y_mu_inf = self.projection.q_target_Ratecell.zF.get()
+        y_mu_inf = self.projection.q_target_Ratecell.z.get()
     
         EFE = 0. 
         y_mu = 0.
@@ -593,6 +595,4 @@ class NGCTransformer:
 
     def get_latents(self):
         return self.projection.q_out_Ratecell.z.get()
-        
-
-    
+  

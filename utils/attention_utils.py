@@ -162,9 +162,9 @@ class AttentionBlock(JaxComponent):
         self.dq.set(dq)
         self.dk.set(dk)
         self.dv.set(dv)
-        dtarget_q= -self.dq.get()
-        dtarget_k= -self.dk.get()
-        dtarget_v= -self.dv.get()
+        dtarget_q= dq
+        dtarget_k= dk
+        dtarget_v= dv
         self.dtarget_q.set(dtarget_q)
         self.dtarget_k.set(dtarget_k)
         self.dtarget_v.set(dtarget_v)
