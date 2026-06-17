@@ -41,7 +41,7 @@ import textwrap
 def generate_text(
     model,
     tokenizer,
-    max_new_tokens: int = 100,
+    max_new_tokens: int = 200,
     seq_len: int = config.seq_len,
     temperature: float = 1.0,
     top_k: int = 0,
@@ -88,7 +88,7 @@ def generate_text(
         # Forward pass
 
         y_mu_inf, y_mu, _ = model.process(input_seq, dummy_target, adapt_synapses=False)
-        logits = y_mu_inf.reshape(config.batch_size, config.seq_len, config.vocab_size)
+        logits = y_mu.reshape(config.batch_size, config.seq_len, config.vocab_size)
 
         # Get logits for the last *real* token (excluding padding)
         if current_tokens.shape[1] > config.seq_len:
@@ -177,8 +177,8 @@ if __name__ == "__main__":
     generated_1 = generate_text(
         model,
         tokenizer,
-        max_new_tokens=100,
-        temperature=0.9,
+        max_new_tokens=200,
+        temperature=0.8,
         top_k=50,
         key=key_1,
     )

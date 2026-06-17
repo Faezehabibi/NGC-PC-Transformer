@@ -1,18 +1,18 @@
 class Config:
     SEED = 42
-    seq_len =64
-    n_embed = 96
-    batch_size = 12
-    vocab_size = 11710# data vocab size + special tokens = 11706 + 4
+    seq_len =32
+    n_embed = 128
+    batch_size = 8
+    vocab_size = 11711# data vocab size + special tokens = 11706 + 4
     n_heads = 8
-    n_layers = 2
-    dropout_rate = 0.0
+    n_layers = 4
+    dropout_rate = 0.1
     eta = 4.919042890915579e-06
-    eta_o= 4.919042890915579e-04
+    eta_o= 4.919042890915579e-03
     exp_dir = "exp" 
     pos_learnable = True
     optim_type = "sgd"
-    epoch = 20
+    epoch = 5
     n_iter= 26
     tau_o = 5
     # Approximate Xavier scaling: 1 / sqrt(512) is about 0.04
@@ -25,7 +25,7 @@ class Config:
     act_fx_o = "identity"
 
     # Tokenizer selection: "BPE" (custom/BPE loader) or "tiktoken"
-    tokenizer = "tiktoken"
+    tokenizer = "BPE"
     # When tokenizer == "tiktoken", tokenizer_name is used (e.g. "gpt2" or "cl100k_base")
     tokenizer_name = "gpt2"
 
