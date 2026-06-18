@@ -32,3 +32,6 @@ class Config:
     # When tokenizer == "BPE", tokenizer_vocab_file may point to a vocab json or a newline token list.
     # Optional: set to None to use a simple fallback whitespace tokenizer.
     tokenizer_vocab_file = None
+
+    # set True to Use jax.lax.scan fused advance loop (faster, minor floating-point differences from the normal python loop)
+    fused_advance = True
