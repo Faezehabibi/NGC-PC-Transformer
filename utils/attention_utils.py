@@ -6,11 +6,12 @@ import jax
 from functools import partial
 import jax.numpy as jnp
 from utils.model_util import d_softmax_vjp
+from utils.rope_utils import apply_rotary_emb, apply_rotary_emb_inv, precompute_freqs_cis_real
 
-@partial(jit, static_argnums=[4, 5, 6, 7, 8])
-def _compute_attention(Q, K, V, mask, n_heads, d_head, dropout_rate, seq_len, batch_size, key):
+@partial(jit, static_argnums=[6, 7, 8, 9, 10])
+def _compute_attention(Q, K, V, cos, sin, mask, n_heads, d_head, dropout_rate, seq_len, batch_size, key):
     """
-    Compute multi-head attention 
+    Compute multi-head attention with RoPE
     """
     B = batch_size
     S = seq_len
@@ -24,6 +25,9 @@ def _compute_attention(Q, K, V, mask, n_heads, d_head, dropout_rate, seq_len, ba
     q = Q.reshape((B, S, n_heads, d_head)).transpose([0, 2, 1, 3])
     k = K.reshape((B, S, n_heads, d_head)).transpose([0, 2, 1, 3]) 
     v = V.reshape((B, S, n_heads, d_head)).transpose([0, 2, 1, 3])
+    
+    q, k = apply_rotary_emb(q, k, cos, sin)
+    
     # Scaled dot-product attention
     s_c = jnp.einsum("BHTE,BHSE->BHTS", q, k) / jnp.sqrt(d_head)
     
@@ -45,8 +49,8 @@ def _compute_attention(Q, K, V, mask, n_heads, d_head, dropout_rate, seq_len, ba
     return attention, s_c, q, k, v
 
 
-@partial(jit, static_argnums=[6, 7, 8, 9, 10])
-def compute_grads(Q, K, V, mask, s_c, dmu, n_heads, d_head, dropout_rate, seq_len, batch_size, key):
+@partial(jit, static_argnums=[8, 9, 10, 11, 12])
+def compute_grads(Q_rot, K_rot, V, cos, sin, mask, s_c, dmu, n_heads, d_head, dropout_rate, seq_len, batch_size, key):
     """Compute gradients for Q, K, V using d_softmax and attention scores
     """
     B = batch_size
@@ -66,12 +70,16 @@ def compute_grads(Q, K, V, mask, s_c, dmu, n_heads, d_head, dropout_rate, seq_le
     _mask = mask[None, None, :, :]  # (1, 1, S, S)
     ds = jnp.where(_mask, ds, 0.) 
     
-    dQ = jnp.einsum("bhqk,bhkd->bhqd", ds, K)  # (B, H, S, D)
-    dK = jnp.einsum("bhkq,bhqd->bhkd", ds, Q)  # (B, H, S, D)
+    # Backpropagate through scaled dot-product attention
+    dQ_rot = jnp.einsum("bhqk,bhkd->bhqd", ds, K_rot)  # (B, H, S, D)
+    dK_rot = jnp.einsum("bhkq,bhqd->bhkd", ds, Q_rot)  # (B, H, S, D)
+    
+    # Inverse RoPE to get raw Q and K gradients
+    dQ_raw, dK_raw = apply_rotary_emb_inv(dQ_rot, dK_rot, cos, sin)
     
     # 6. Reshape to flattened format
-    dq = dQ.transpose(0, 2, 1, 3).reshape(B * S, H * D)
-    dk = dK.transpose(0, 2, 1, 3).reshape(B * S, H * D)
+    dq = dQ_raw.transpose(0, 2, 1, 3).reshape(B * S, H * D)
+    dk = dK_raw.transpose(0, 2, 1, 3).reshape(B * S, H * D)
     dv = dV.transpose(0, 2, 1, 3).reshape(B * S, H * D)
     
     return dq, dk, dv
@@ -117,6 +125,11 @@ class AttentionBlock(JaxComponent):
             raise ValueError(f"n_embed={n_embed} must be divisible by n_heads={n_heads}")
         self.d_head = n_embed // n_heads
 
+        # Precompute RoPE
+        cos_rope, sin_rope = precompute_freqs_cis_real(self.d_head, self.seq_len)
+        self.cos = Compartment(cos_rope)
+        self.sin = Compartment(sin_rope)
+
         # Input compartments
         self.inputs_q = Compartment(jnp.zeros((batch_size, seq_len, n_embed)))
         self.inputs_k = Compartment(jnp.zeros((batch_size, seq_len, n_embed)))
@@ -148,8 +161,10 @@ class AttentionBlock(JaxComponent):
         d_head=self.d_head
         dropout_rate=self.dropout_rate
         key=self.key.get()
+        cos=self.cos.get()
+        sin=self.sin.get()
         attention, s_c, q, k, v = _compute_attention(
-            inputs_q, inputs_k, inputs_v, mask,        
+            inputs_q, inputs_k, inputs_v, cos, sin, mask,        
             self.n_heads,        
             self.d_head,        
             self.dropout_rate, 
@@ -158,7 +173,7 @@ class AttentionBlock(JaxComponent):
             key                  
         )
         # self.S.set(S)
-        dq, dk, dv = compute_grads(q, k, v, mask, s_c, dmu, n_heads, d_head, dropout_rate, self.seq_len, self.batch_size, key)
+        dq, dk, dv = compute_grads(q, k, v, cos, sin, mask, s_c, dmu, n_heads, d_head, dropout_rate, self.seq_len, self.batch_size, key)
         self.dq.set(dq)
         self.dk.set(dk)
         self.dv.set(dv)

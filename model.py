@@ -46,7 +46,7 @@ class NGCTransformer:
     """
 
    
-    def __init__(self, dkey, batch_size, seq_len, n_embed, vocab_size, n_layers, n_heads, T, dt, tau_m, act_fx, eta, dropout_rate, exp_dir, model_name, loadDir=None, pos_learnable=False, optim_type="adam", wub=1.0, wlb=0.0, **kwargs):
+    def __init__(self, dkey, batch_size, seq_len, n_embed, vocab_size, n_layers, n_heads, T, dt, tau_m, act_fx, eta, dropout_rate, exp_dir, model_name, loadDir=None, optim_type="adam", wub=1.0, wlb=0.0, **kwargs):
 
         self.exp_dir = exp_dir
         self.model_name = model_name
@@ -66,7 +66,7 @@ class NGCTransformer:
        
         with Context("Circuit") as self.circuit:
                 
-            self.embedding = EMBEDDING(dkey=subkeys[0], vocab_size=self.vocab_size, seq_len=self.seq_len, embed_dim=self.n_embed, batch_size=self.batch_size, pos_learnable=pos_learnable, eta=eta, optim_type=optim_type)
+            self.embedding = EMBEDDING(dkey=subkeys[0], vocab_size=self.vocab_size, seq_len=self.seq_len, embed_dim=self.n_embed, batch_size=self.batch_size, eta=eta, optim_type=optim_type)
                 
             self.blocks = []
             for i in range(n_layers):
@@ -80,7 +80,7 @@ class NGCTransformer:
             self.z_target=RateCell("z_target", n_units= self.vocab_size, tau_m=0., act_fx="identity", batch_size=self.batch_size * self.seq_len) 
             self.z_actfx= RateCell("z_actfx", n_units= self.vocab_size, tau_m=tau_m, act_fx="softmax", batch_size=self.batch_size * self.seq_len)
             self.projection = Projection(dkey=subkeys[29], n_embed=self.n_embed, seq_len=self.seq_len, batch_size=self.batch_size,
-                                             vocab_size=self.vocab_size, eta=eta, optim_type=optim_type, pos_learnable=pos_learnable, wub=wub, wlb=wlb, n_blocks=n_layers, n_heads=n_heads, dropout_rate=dropout_rate)
+                                             vocab_size=self.vocab_size, eta=eta, optim_type=optim_type, wub=wub, wlb=wlb, n_blocks=n_layers, n_heads=n_heads, dropout_rate=dropout_rate)
             self.reshape_4d_to_2d = ReshapeComponent("reshape_4d_to_2d",
                                             input_shape=(self.batch_size, self.seq_len, self.n_embed, 1),
                                             output_shape=(self.batch_size * self.seq_len, self.n_embed))
@@ -507,8 +507,6 @@ class NGCTransformer:
         
         self.reset.run()
         self.projection.Q_embed.word_weights.set(self.embedding.W_embed.word_weights.get())
-        if self.embedding.W_embed.pos_learnable:
-           self.projection.Q_embed.pos_weights.set(self.embedding.W_embed.pos_weights.get())
         for i in range(self.n_layers):
             block_proj= self.projection.blocks[i]
             block= self.blocks[i] 
@@ -605,8 +603,6 @@ class NGCTransformer:
         total = 0
         # Embedding weights
         total += self.embedding.W_embed.word_weights.get().size
-        if self.embedding.W_embed.pos_learnable:
-            total += self.embedding.W_embed.pos_weights.get().size
         # Transformer blocks
         for block in self.blocks:
             for W in [block.attention.W_q, block.attention.W_k,
