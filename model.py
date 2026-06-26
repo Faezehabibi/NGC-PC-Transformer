@@ -210,7 +210,7 @@ class NGCTransformer:
                 self.z_actfx.zF >> self.output.e_out.mu
                 self.z_target.z >> self.output.e_out.target
 
-                self.output.e_out.dtarget >> self.output.E_out.inputs
+                self.output.e_out.dmu >> self.output.E_out.inputs
 
 
                 self.output.E_out.outputs >> self.output.z_out.j
