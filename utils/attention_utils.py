@@ -57,17 +57,17 @@ def compute_grads(Q, K, V, mask, s_c, dmu, n_heads, d_head, dropout_rate, seq_le
     P, jvp_fn = d_softmax_vjp(s_c, tau=0.0)  # P: (B, H, S, S)
     
     # Reshape error
-    dmu_reshaped =dmu.reshape(B, S, H, D).transpose(0, 2, 1, 3)  # (B, H, S, D)
-    dV = jnp.einsum("bhkq,bhkd->bhqd", P, dmu_reshaped)  # (B, H, S, D)
-    da = jnp.einsum("bhkd,bhqd->bhqk", dmu_reshaped, V)  # (B, H, S, S)
+    dmu_reshaped = dmu.reshape(B, S, H, D).transpose(0, 2, 1, 3)  ## (B, H, S, D)
+    dV = jnp.einsum("bhkq,bhkd->bhqd", P, dmu_reshaped)           ## (B, H, S, D)
+    da = jnp.einsum("bhte,bhse->bhts", dmu_reshaped, V)           ## (B, H, S, D)
     ds = jvp_fn(da)  
     ds = ds / jnp.sqrt(D)
     
-    _mask = mask[None, None, :, :]  # (1, 1, S, S)
-    ds = jnp.where(_mask, ds, 0.) 
-    
-    dQ = jnp.einsum("bhqk,bhkd->bhqd", ds, K)  # (B, H, S, D)
-    dK = jnp.einsum("bhkq,bhqd->bhkd", ds, Q)  # (B, H, S, D)
+    _mask = mask[None, None, :, :]                                ## (1, 1, S, S)
+    ds = jnp.where(_mask, ds, 0.)
+
+    dQ = jnp.einsum("bhts,bhsd->bhtd", ds, K)                     ## (B, H, T, D)
+    dK = jnp.einsum("bhts,bhtd->bhsd", ds, Q)                     ## (B, H, S, D)
     
     # 6. Reshape to flattened format
     dq = dQ.transpose(0, 2, 1, 3).reshape(B * S, H * D)
