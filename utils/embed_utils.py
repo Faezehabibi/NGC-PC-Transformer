@@ -88,7 +88,7 @@ class EmbeddingSynapse(JaxComponent):
 
     def __init__(
             self, name, vocab_size, seq_len, embed_dim, batch_size,
-            pos_learnable, eta, optim_type, weight_scale=0.02,
+            pos_learnable, eta, optim_type, weight_scale=0.02, sign_value=-1.,
             **kwargs
     ):
         super().__init__(name, **kwargs)
@@ -101,6 +101,7 @@ class EmbeddingSynapse(JaxComponent):
         self.eta = eta
         self.weight_scale = weight_scale
         self.optim_type = optim_type
+        self.sign_value = sign_value
 
         key =random.PRNGKey(1234)
         word_key, pos_key = random.split(key, 2)
@@ -179,10 +180,13 @@ class EmbeddingSynapse(JaxComponent):
         # Compute embedding updates
         inputs= inputs.astype(jnp.int32)
         d_word_weights, d_pos_weights = _compute_embedding_updates(
-            inputs, post, word_weights, pos_weights, vocab_size, seq_len, 
+            inputs, post, word_weights, pos_weights, vocab_size, seq_len,
             embed_dim, batch_size, self.pos_learnable
         )
-        
+
+        d_word_weights = d_word_weights * self.sign_value
+        d_pos_weights = d_pos_weights * self.sign_value
+
         word_opt_params, [new_word_weights] = opt(
             word_opt_params, [word_weights], [d_word_weights]
         )

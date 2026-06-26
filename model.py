@@ -184,13 +184,13 @@ class NGCTransformer:
 
 
                     block.attention.z_qkv.zF >> block.attention.W_q.pre
-                    block.attention.attn_block.dtarget_q >> block.attention.W_q.post
+                    block.attention.attn_block.dq >> block.attention.W_q.post
 
                     block.attention.z_qkv.zF >> block.attention.W_k.pre
-                    block.attention.attn_block.dtarget_k >> block.attention.W_k.post
+                    block.attention.attn_block.dk >> block.attention.W_k.post
 
                     block.attention.z_qkv.zF >> block.attention.W_v.pre
-                    block.attention.attn_block.dtarget_v >> block.attention.W_v.post
+                    block.attention.attn_block.dv >> block.attention.W_v.post
 
                     block.attention.z_attn.zF >> block.attention.W_attn_out.pre
                     block.attention.e_attn.dmu >> block.attention.W_attn_out.post
@@ -210,7 +210,7 @@ class NGCTransformer:
                 self.z_actfx.zF >> self.output.e_out.mu
                 self.z_target.z >> self.output.e_out.target
 
-                self.output.e_out.dtarget >> self.output.E_out.inputs
+                self.output.e_out.dmu >> self.output.E_out.inputs
 
 
                 self.output.E_out.outputs >> self.output.z_out.j
@@ -563,7 +563,7 @@ class NGCTransformer:
         
         
         ## get projected prediction (from the P-step)
-        y_mu_inf = self.projection.q_target_Ratecell.z.get()
+        y_mu_inf = self.projection.q_target_Ratecell.zF.get()
     
         EFE = 0. 
         y_mu = 0.
