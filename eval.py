@@ -7,6 +7,10 @@ from ngclearn.utils.metric_utils import measure_CatNLL
 from data_preprocess.data_loader import DataLoader
 from config import Config as config
 import time
+jax.config.update("jax_default_matmul_precision", "high")
+jax.config.update("jax_compilation_cache_dir", "/tmp/jax_cache")
+jax.config.update("jax_persistent_cache_min_entry_size_bytes", 0)
+jax.config.update("jax_persistent_cache_min_compile_time_secs", 0)
 
 def eval_model(model: NGCTransformer, data_loader, vocab_size: int):
     """
@@ -21,7 +25,7 @@ def eval_model(model: NGCTransformer, data_loader, vocab_size: int):
         targets = batch[1][1]
 
         targets_flat = jax.nn.one_hot(targets.flatten(), vocab_size)
-        _, y_mu, _ = model.process(obs=inputs,
+        _, y_mu, EFE = model.process(obs=inputs,
                                    lab=targets_flat,
                                    adapt_synapses=False)
 
@@ -32,11 +36,11 @@ def eval_model(model: NGCTransformer, data_loader, vocab_size: int):
 
         if batch_idx % 10 == 0:
             batch_ppl = jnp.exp(batch_ce_loss)
-            print(f" Eval Batch {batch_idx}: | CE = {batch_ce_loss:.4f} | PPL = {batch_ppl:.4f}")
+            print(f" Eval Batch {batch_idx}: | CE = {batch_ce_loss:.4f} | PPL = {batch_ppl:.4f} | EFE:{EFE:.4f}")
 
     ce = total_nll / total_tokens
     ppl = jnp.exp(ce)
-    return ce, ppl
+    return ce, ppl, EFE
 
 
 
@@ -93,12 +97,13 @@ if __name__ == "__main__":
         optim_type=config.optim_type,
         wub=config.wub,
         wlb=config.wlb,
+        generate =False, 
     )
     data_loader = DataLoader(seq_len=config.seq_len, batch_size=config.batch_size)
     _, _, test_loader = data_loader.load_and_prepare_data()
     start_time = time.time()
-    test_ce, test_ppl = eval_model(model, test_loader, config.vocab_size)
+    test_ce, test_ppl, test_efe = eval_model(model, test_loader, config.vocab_size)
     elapsed_time = time.time() - start_time
     print("\nFinal Test Evaluation:")
-    print(f"\nCE: {test_ce:.4f} | PPL: {test_ppl:.4f}")
+    print(f"\nCE: {test_ce:.4f} | PPL: {test_ppl:.4f} | EFE:{test_efe:.4f}")
     print(f"Total Evaluation time: {elapsed_time:.2f} seconds ")

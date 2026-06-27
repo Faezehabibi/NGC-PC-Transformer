@@ -30,7 +30,7 @@ def main():
     
     model = NGCTransformer(dkey, batch_size=batch_size, seq_len=seq_len, n_embed=n_embed, vocab_size=vocab_size, n_layers=n_layers, n_heads=n_heads,
                           T=T, dt=1., tau_m=tau_m , act_fx=act_fx, eta=eta, dropout_rate= dropout_rate, exp_dir="exp",
-                  loadDir= None, pos_learnable= pos_learnable, optim_type=optim_type, wub = wub, wlb= wlb, model_name="ngc_transformer" )
+                  loadDir= None, pos_learnable= pos_learnable, optim_type=optim_type, wub = wub, wlb= wlb, model_name="ngc_transformer", generate =False )
 
     print(f" {model.count_parameters()/1e6:.2f} M parameters")
 
@@ -69,7 +69,7 @@ def main():
 
         avg_train_EFE, train_ce, train_ppl = train_model(train_loader)
 
-        dev_ce, dev_ppl = eval_model(model, valid_loader, vocab_size)
+        dev_ce, dev_ppl,_ = eval_model(model, valid_loader, vocab_size)
         print(f"Epoch {i} Summary: Train CE = {train_ce:.4f}, Train PPL = {train_ppl:.4f}, Val CE = {dev_ce:.4f}, Val PPL = {dev_ppl:.4f}, Avg EFE = {avg_train_EFE:.4f}")
         if i == (epoch-1):
           model.save_to_disk(params_only=False) # save final state of model to disk

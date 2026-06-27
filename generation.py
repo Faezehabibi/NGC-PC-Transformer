@@ -145,7 +145,8 @@ if __name__ == "__main__":
         optim_type=config.optim_type, 
         wub=config.wub, 
         wlb=config.wlb, 
-        model_name="ngc_transformer"
+        model_name="ngc_transformer",
+        generate= True
     )
 
     # Optional: add custom weight stats here if needed

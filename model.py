@@ -48,7 +48,7 @@ class NGCTransformer:
     """
 
    
-    def __init__(self, dkey, batch_size, seq_len, n_embed, vocab_size, n_layers, n_heads, T, dt, tau_m, act_fx, eta, dropout_rate, exp_dir, model_name, loadDir=None, pos_learnable=False, optim_type="adam", wub=1.0, wlb=0.0, **kwargs):
+    def __init__(self, dkey, batch_size, seq_len, n_embed, vocab_size, n_layers, n_heads, T, dt, tau_m, act_fx, eta, dropout_rate, exp_dir, model_name, loadDir=None, pos_learnable=False, optim_type="adam", wub=1.0, wlb=0.0, generate= False, **kwargs):
 
         self.exp_dir = exp_dir
         self.model_name = model_name
@@ -206,14 +206,14 @@ class NGCTransformer:
                 self.output.z_out.zF >> self.output.W_out.inputs
                 self.output.W_out.outputs >> self.z_actfx.j
                 self.output.W_out.outputs >> self.Outgrad.mu
+                if generate == False:
+                    self.z_actfx.zF >> self.output.e_out.mu
+                    self.z_target.z >> self.output.e_out.target
 
-                self.z_actfx.zF >> self.output.e_out.mu
-                self.z_target.z >> self.output.e_out.target
+                    self.output.e_out.dmu >> self.output.E_out.inputs
+                    self.output.e_out.dmu >> self.output.W_out.post
 
-                self.output.e_out.dmu >> self.output.E_out.inputs
-
-
-                self.output.E_out.outputs >> self.output.z_out.j
+                    self.output.E_out.outputs >> self.output.z_out.j
                 self.blocks[self.n_layers - 1].mlp.e_mlp.dtarget >> self.output.z_out.j_td
 
 
@@ -222,7 +222,6 @@ class NGCTransformer:
 
 
                 self.output.z_out.zF >> self.output.W_out.pre
-                self.output.e_out.dmu >> self.output.W_out.post
 
                         
                         
