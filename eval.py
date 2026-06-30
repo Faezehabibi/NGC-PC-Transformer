@@ -47,8 +47,7 @@ def load_weights_into_model(model, model_dir):
 
     embed_data = jnp.load(os.path.join(custom_dir, "W_embed.npz"))
     model.embedding.W_embed.word_weights.set(embed_data["word_weights"])
-    if model.embedding.W_embed.pos_learnable:
-        model.embedding.W_embed.pos_weights.set(embed_data["pos_weights"])
+
 
     for i in range(model.n_layers):
         for name in ["W_q", "W_k", "W_v", "W_attn_out", "W_mlp1", "W_mlp2"]:
@@ -89,7 +88,6 @@ if __name__ == "__main__":
         exp_dir="exp",
         model_name="ngc_transformer",
         loadDir="exp",  
-        pos_learnable=config.pos_learnable,
         optim_type=config.optim_type,
         wub=config.wub,
         wlb=config.wlb,

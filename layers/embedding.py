@@ -9,7 +9,7 @@ class EMBEDDING:
     """
    embedding layer using the EmbeddingSynapse
     """
-    def __init__(self, dkey, vocab_size, seq_len, embed_dim, batch_size, pos_learnable, eta, optim_type, **kwargs):
+    def __init__(self, dkey, vocab_size, seq_len, embed_dim, batch_size, eta, optim_type, **kwargs):
         
         dkey, *subkeys = random.split(dkey, 4)
     
@@ -23,7 +23,6 @@ class EMBEDDING:
                 seq_len=seq_len,
                 embed_dim=embed_dim, 
                 batch_size=batch_size,
-                pos_learnable=pos_learnable,
                 eta=eta,
                 optim_type=optim_type,
                 key=subkeys[0])

@@ -10,7 +10,6 @@ class Config:
     eta = 4.919042890915579e-06
     eta_o= 2.9e-03
     exp_dir = "exp" 
-    pos_learnable = True
     optim_type = "sgd"
     epoch = 1
     n_iter= 26
