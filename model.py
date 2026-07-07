@@ -101,13 +101,15 @@ class NGCTransformer:
         else:
             with Context("Circuit") as self.circuit:
             
-                
+                ## ========================================================================
+                ##        z_embed >> W_embed >> reshape_3d_to_2d_embed >> e_embed
+                ## ========================================================================
                 self.embedding.z_embed.zF   >> self.embedding.W_embed.inputs
                 self.embedding.W_embed.outputs >> self.reshape_3d_to_2d_embed.inputs  
                 self.reshape_3d_to_2d_embed.outputs >> self.embedding.e_embed.mu
+                
                 self.blocks[0].attention.z_qkv.z >> self.embedding.e_embed.target
                 
-                # self.reshape_4d_to_2d.inputs >> self.attention.z_qkv.zF
                 for blocks in range(n_layers):
                     block= self.blocks[blocks]
                     
@@ -245,11 +247,14 @@ class NGCTransformer:
                     block_proj.Q_k.outputs >> block_proj.q_attn_block.inputs_k
                     block_proj.Q_v.outputs >> block_proj.q_attn_block.inputs_v
 
+                    ## ===============================================================================
+                    ##  q_attn_block >> reshape_3d_to_2d_proj1 >> q_attn_Ratecell >> Q_attn_out >> ...
+                    ##  ... >> q_mlp_Ratecell >> Q_mlp1 >> q_mlp2_Ratecell >> Q_mlp2
+                    ## ===============================================================================
                     block_proj.q_attn_block.outputs >> block_proj.reshape_3d_to_2d_proj1.inputs
                     block_proj.reshape_3d_to_2d_proj1.outputs >> block_proj.q_attn_Ratecell.j
                     block_proj.q_attn_Ratecell.zF >> block_proj.Q_attn_out.inputs
                     block_proj.Q_attn_out.outputs >> block_proj.q_mlp_Ratecell.j
-
                     block_proj.q_mlp_Ratecell.zF >> block_proj.Q_mlp1.inputs
                     block_proj.Q_mlp1.outputs >> block_proj.q_mlp2_Ratecell.j
                     block_proj.q_mlp2_Ratecell.zF >> block_proj.Q_mlp2.inputs
@@ -271,12 +276,14 @@ class NGCTransformer:
                 embedding_evolve_process  >> self.embedding.W_embed.evolve
 
 
-
+                ## ========================================================================
+                ##   z_embed >> W_embed >> reshape_3d_to_2d >> e_embed >> reshape_2d_to_3d
+                ## ========================================================================
                 advance_process >> self.embedding.z_embed.advance_state
-                advance_process >> self.reshape_3d_to_2d_embed.advance_state
                 advance_process >> self.embedding.W_embed.advance_state
-                advance_process >> self.reshape_2d_to_3d_embed.advance_state
+                advance_process >> self.reshape_3d_to_2d_embed.advance_state
                 advance_process >> self.embedding.e_embed.advance_state
+                advance_process >> self.reshape_2d_to_3d_embed.advance_state
 
                 for i in range(n_layers):
                     block = self.blocks[i]
@@ -313,7 +320,11 @@ class NGCTransformer:
                     advance_process >> block.mlp.E_mlp.advance_state
                    
                    
-                   
+                    reset_process >> block.attention.attn_block.reset
+                    reset_process >> block.attention.W_v.reset
+                    reset_process >> block.attention.W_k.reset
+                    reset_process >> block.attention.W_q.reset
+                    reset_process >> block.attention.W_attn_out.reset
                     reset_process >> block.attention.z_qkv.reset
                     reset_process >> block.attention.z_attn.reset
                     reset_process >> block.attention.e_qkv.reset
@@ -322,6 +333,8 @@ class NGCTransformer:
                     reset_process >> block.mlp.z_mlp2.reset
                     reset_process >> block.mlp.e_mlp.reset
                     reset_process >> block.mlp.e_mlp1.reset
+                    reset_process >> block.mlp.W_mlp1.reset
+                    reset_process >> block.mlp.W_mlp2.reset
                     reset_process >> block.reshape_3d_to_2d.reset
                     reset_process >> block.reshape_2d_to_3d_q.reset
                     reset_process >> block.reshape_2d_to_3d_k.reset
@@ -349,6 +362,7 @@ class NGCTransformer:
                 reset_process >> self.projection.q_target_Ratecell.reset
                 reset_process >> self.projection.eq_target.reset
                 reset_process >> self.embedding.z_embed.reset
+                reset_process >> self.embedding.W_embed.reset
                 reset_process >> self.output.z_out.reset
                 reset_process >> self.z_target.reset
                 reset_process >> self.z_actfx.reset
@@ -357,6 +371,8 @@ class NGCTransformer:
                 reset_process >> self.output.W_out.reset
                 reset_process >> self.reshape_3d_to_2d_embed.reset
                 reset_process >> self.reshape_2d_to_3d_embed.reset
+                reset_process >> self.projection.reshape_3d_to_2d_proj.reset
+
                 reset_process >> self.Outgrad.reset
 
                 evolve_process >> self.output.W_out.evolve
@@ -369,19 +385,27 @@ class NGCTransformer:
                     project_process >> block_proj.Q_q.advance_state
                     project_process >> block_proj.Q_k.advance_state
                     project_process >> block_proj.Q_v.advance_state
-                    project_process >> block_proj.q_attn_Ratecell.advance_state
+                    ## ===============================================================================
+                    ##  q_attn_block >> reshape_3d_to_2d_proj1 >> q_attn_Ratecell >> Q_attn_out >> ...
+                    ##  ... >> q_mlp_Ratecell >> Q_mlp1 >> q_mlp2_Ratecell >> Q_mlp2
+                    ## ===============================================================================
                     project_process >> block_proj.q_attn_block.advance_state
                     project_process >> block_proj.reshape_3d_to_2d_proj1.advance_state
+                    project_process >> block_proj.q_attn_Ratecell.advance_state
                     project_process >> block_proj.Q_attn_out.advance_state
                     project_process >> block_proj.q_mlp_Ratecell.advance_state
-                    project_process >> block_proj.q_mlp2_Ratecell.advance_state
                     project_process >> block_proj.Q_mlp1.advance_state
+                    project_process >> block_proj.q_mlp2_Ratecell.advance_state
                     project_process >> block_proj.Q_mlp2.advance_state
+                    
                     reset_process >> block_proj.q_qkv_Ratecell.reset
                     reset_process >> block_proj.q_attn_block.reset
                     reset_process >> block_proj.q_attn_Ratecell.reset
                     reset_process >> block_proj.q_mlp_Ratecell.reset
                     reset_process >> block_proj.q_mlp2_Ratecell.reset 
+                    reset_process >> block_proj.reshape_3d_to_2d_proj1.reset
+                    ## ==============================================
+                
                 project_process >> self.projection.q_out_Ratecell.advance_state
                 project_process >> self.projection.Q_out.advance_state
                 project_process >> self.projection.q_target_Ratecell.advance_state
