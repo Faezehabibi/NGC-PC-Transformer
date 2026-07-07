@@ -125,9 +125,6 @@ class AttentionBlock(JaxComponent):
         self.dk = Compartment(jnp.zeros((batch_size*seq_len, n_embed)))
         self.dv = Compartment(jnp.zeros((batch_size*seq_len, n_embed)))
         self.dmu = Compartment(jnp.zeros((batch_size * seq_len, n_embed)))
-        self.dtarget_q = Compartment(jnp.zeros((batch_size * seq_len, n_embed)))
-        self.dtarget_k = Compartment(jnp.zeros((batch_size * seq_len, n_embed)))
-        self.dtarget_v = Compartment(jnp.zeros((batch_size * seq_len, n_embed)))
         self.key = Compartment(random.PRNGKey(0))
         # Output compartment
         self.outputs = Compartment(jnp.zeros((batch_size, seq_len, n_embed)))    
@@ -162,13 +159,6 @@ class AttentionBlock(JaxComponent):
         self.dq.set(dq)
         self.dk.set(dk)
         self.dv.set(dv)
-        dtarget_q= dq
-        dtarget_k= dk
-        dtarget_v= dv
-        self.dtarget_q.set(dtarget_q)
-        self.dtarget_k.set(dtarget_k)
-        self.dtarget_v.set(dtarget_v)
-        
         self.outputs.set(attention)
   
     @compilable
