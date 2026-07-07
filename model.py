@@ -558,14 +558,6 @@ class NGCTransformer:
         self.clamp_input(obs)
         self.clamp_infer_target(lab)
         self.project.run(t=0., dt=1.)
-        a = self.projection.q_target_Ratecell.zF.get().mean()
-        self.project.run(t=0., dt=1.)
-        self.project.run(t=0., dt=1.)
-        self.project.run(t=0., dt=1.)
-        b = self.projection.q_target_Ratecell.zF.get().mean()
-
-        if a != b:
-            print(a, "!=", b)
 
         ## get projected prediction (from the P-step)
         y_mu_inf = self.projection.q_target_Ratecell.zF.get()
