@@ -18,7 +18,7 @@ class ProjBlock:
      
         self.q_qkv_Ratecell = RateCell(f"{prefix}q_qkv_Ratecell", n_units=n_embed, tau_m=0., act_fx="identity",
                           batch_size=batch_size * seq_len)
-        self.q_attn_Ratecell = AttnRateCell(f"{prefix}q_attn_Ratecell", n_units=n_embed, tau_m=0., act_fx="identity",
+        self.q_attn_Ratecell = RateCell(f"{prefix}q_attn_Ratecell", n_units=n_embed, tau_m=0., act_fx="identity",
                           batch_size=batch_size * seq_len)
         self.q_mlp_Ratecell = RateCell(f"{prefix}q_mlp_Ratecell", n_units= n_embed, tau_m=0., act_fx="identity",
                            batch_size= batch_size * seq_len)
